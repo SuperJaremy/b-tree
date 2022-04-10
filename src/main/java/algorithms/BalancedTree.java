@@ -5,8 +5,10 @@ import java.util.*;
 public class BalancedTree {
     private final static int MAX_VALUES = 5;
     private TreeNode root;
+    private List<List<List<int[]>>> snapshots;
 
-    public BalancedTree() {
+    public BalancedTree(List<List<List<int[]>>> snapshots) {
+        this.snapshots = snapshots;
         root = new TreeNode();
     }
 
@@ -18,9 +20,14 @@ public class BalancedTree {
         return list;
     }
 
+    private void makeSnapshot() {
+        snapshots.add(traverse());
+    }
+
     public void insert(int value) {
         if (root.isLeaf()) {
             root.addValue(value);
+            makeSnapshot();
         } else insert(value, root);
         splitRoot();
     }
@@ -33,6 +40,7 @@ public class BalancedTree {
     public void delete(int value) {
         if (root.isLeaf()) {
             root.deleteValue(value);
+            makeSnapshot();
         } else
             delete(value, root);
     }
@@ -56,6 +64,7 @@ public class BalancedTree {
         TreeNode child = node.getSuitableNeighbour(value);
         if (child.isLeaf()) {
             child.addValue(value);
+            makeSnapshot();
         } else
             insert(value, child);
         splitChild(node, child);
@@ -69,14 +78,16 @@ public class BalancedTree {
         TreeNode right = child.rightNode(centralIndex);
         parent.addValue(child.values[centralIndex]);
         parent.addNeighbours(child.values[centralIndex], left, right);
+        makeSnapshot();
     }
 
     private void splitRoot() {
         if (root.hasSpace())
             return;
         TreeNode newRoot = new TreeNode();
-        splitChild(newRoot, root);
+        TreeNode oldRoot = root;
         root = newRoot;
+        splitChild(root, oldRoot);
     }
 
     private TreeNode find(int value, TreeNode node) {
@@ -96,9 +107,11 @@ public class BalancedTree {
             child.deleteValue(value);
             int predecessor = deleteReplaceWithPredecessor(child, value);
             child.addValue(predecessor);
+            makeSnapshot();
             findAndCompleteLeafNode(predecessor, child);
         } else {
             child.deleteValue(value);
+            makeSnapshot();
         }
         complete(node, child);
     }
@@ -160,6 +173,7 @@ public class BalancedTree {
         } else if (rightSibling != null) {
             mergeNodes(child, rightSibling, parent);
         }
+        makeSnapshot();
     }
 
     private void mergeNodes(TreeNode left, TreeNode right, TreeNode parent) {
